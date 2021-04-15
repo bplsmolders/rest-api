@@ -13,14 +13,13 @@ const bcrypt = require('bcrypt');
 
 exports.authenticateUser = async (req, res, next) => {
   let message;
-
   const credentials = auth(req);
 
   if (credentials) {
     const user = await User.findOne({ where: {emailAddress: credentials.name} });
     if (user) {
-      const authenticated = true
-        // .compareSync(credentials.pass, user.confirmedPassword);
+      const authenticated = bcrypt
+        .compareSync(credentials.pass, user.password);
       if (authenticated) {
         console.log(`Authentication successful for username: ${user.firstName} ${user.lastName}`);
 
