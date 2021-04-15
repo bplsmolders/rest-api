@@ -3,6 +3,8 @@ const express = require('express');
 const { User } = require('./models');
 const { Course } = require('./models');
 const { authenticateUser } = require('./middleware/auth-user');
+const fs = require('fs');
+
 
 
 /* Handler function to wrap each route. */
@@ -15,6 +17,19 @@ function asyncHandler(cb){
         next(error);
       }
     }
+}
+
+// function to update a record
+function save(data){
+  return new Promise((resolve, reject) => {
+    fs.writeFile('data.json', JSON.stringify(data, null, 2), (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
 }
 
 // Construct a router instance.
@@ -52,44 +67,36 @@ router.get('/courses', asyncHandler(async (req, res) => {
     res.status(200).json(courses)
 }));
 
+
 // GET Route that returns all courses related to a single user id
 router.get('/courses/:id', asyncHandler(async (req, res) => {
     let course = await Course.findAll({
         where: {
-            userId: req.params.id
+            id: req.params.id
         }
     });
     res.status(200).json(course)
 }));
 
-// POST Route that creates a new course 
-router.post('/courses', authenticateUser, asyncHandler(async (req, res) => {
-    try {
-        let course = await Course.create(req.body);
-        res.status(201).json({ "message": "Course successfully created!" }).location(`/courses/${course.id}`);
-    } catch (error) {
-        if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
-          const errors = error.errors.map(err => err.message);
-          res.status(400).json({ errors });   
-        } else {
-          throw error;
-        }
-    }    
-}));
 
 // PUT Route that will update the corresponding course
 router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
-    try {
-        let course = await Course.create(req.body);
-        res.status(201).json({ "message": "Course successfully created!" }).location(`/courses/${course.id}`);
-    } catch (error) {
-        if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
-          const errors = error.errors.map(err => err.message);
-          res.status(400).json({ errors });   
-        } else {
-          throw error;
-        }
-    }    
+  let course = await Course.findAll({
+    where: {
+        id: req.params.id
+    }
+  });
+
+  if(course){
+    course.title = req.body.title;
+    course.description = req.body.description;
+    course.estimatedTime = req.body.estimatedTime;
+    course.materialsNeeded = req.body.materialsNeeded;
+
+    res.status(204).end();
+  } else {
+    res.status(404).json({message: "Quote Not Found"});
+  }
 }));
 
 
