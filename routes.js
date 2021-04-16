@@ -152,7 +152,7 @@ router.delete('/courses/:id', authenticateUser, asyncHandler(async (req, res) =>
     where: {id: req.params.id},
   });
 
-  // first checks if course belongs to the current user, then if course exists:
+  // first checks if course belongs to the current user, only then deletes the course.
   if(req.currentUser.id === course[0].dataValues.id){
     if(course){
       Course.destroy({ where: {id: req.params.id} });
