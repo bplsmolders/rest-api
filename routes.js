@@ -6,7 +6,7 @@ const { authenticateUser } = require('./middleware/auth-user');
 const bcrypt = require('bcrypt')
 
 
-/* Handler function to wrap each route. */
+/* async handler function to wrap each route. */
 function asyncHandler(cb){
   return async(req, res, next) => {
     try {
@@ -21,7 +21,8 @@ function asyncHandler(cb){
 // Construct a router instance.
 const router = express.Router();
 
-// GET Route that the currently authenticated user
+// GET Route returns the currently authenticated user
+// Exceeds: Filters out password, createdAt and updatedAt
 router.get('/users', authenticateUser, asyncHandler(async (req, res) => {
     const user = req.currentUser;
 
@@ -32,7 +33,11 @@ router.get('/users', authenticateUser, asyncHandler(async (req, res) => {
     });
 }));
 
-// POST Route that creates a new user
+// POST Route Creates a user, sets the Location header to "/", and returns no content
+// Exceeds: 
+//    Filters out password, createdAt and updatedAt
+//    Checks for and handles SequelizeUniqueConstraintError errors by returning a 400 status code and error message
+
 router.post('/users', asyncHandler(async (req, res) => {
     try {
         const user = await User.create({
@@ -58,7 +63,8 @@ router.post('/users', asyncHandler(async (req, res) => {
     }    
 }));
 
-// GET Route that returns all courses available
+// GET Route Returns a list of courses (including the user that owns each course)
+// Exceeds: Filters out createdAt and updatedAt
 router.get('/courses', asyncHandler(async (req, res) => {
     let courses = await Course.findAll({
       attributes: ['id', 'title', 'description', 'estimatedTime', 'materialsNeeded'],
@@ -70,7 +76,8 @@ router.get('/courses', asyncHandler(async (req, res) => {
     res.status(200).json(courses)
 }));
 
-// GET Route that returns all courses related to a single user id
+// GET Route Returns the course (including the user that owns the course) for the provided course ID
+// Exceeds: Filters out createdAt and updatedAt
 router.get('/courses/:id', asyncHandler(async (req, res) => {
   let course = await Course.findAll({
     where: {
@@ -85,7 +92,7 @@ router.get('/courses/:id', asyncHandler(async (req, res) => {
   res.status(200).json(course)
 }));
 
-// POST Route that creates a course
+// POST Route Creates a course, sets the Location header to the URI for the course, and returns no content
 router.post('/courses', authenticateUser, asyncHandler(async (req, res) => {
   try {
       const course = await Course.create(req.body);
@@ -102,7 +109,8 @@ router.post('/courses', authenticateUser, asyncHandler(async (req, res) => {
   }    
 }));
 
-// PUT Route that will update the corresponding course
+// PUT Route Updates a course and returns no content
+// Exceeds: return a 403 status code if the current user doesn't own the requested course
 router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
   const course = await Course.findAll({
     where: {
@@ -137,7 +145,8 @@ router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
   }
 }));
 
-// DELETE Route that will delete the corresponding course
+// DELETE Route Deletes a course and returns no content
+// Exceeds: return a 403 status code if the current user doesn't own the requested course
 router.delete('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
   let course = await Course.findAll({
     where: {id: req.params.id},
