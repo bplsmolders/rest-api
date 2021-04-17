@@ -118,8 +118,11 @@ router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
     }
   })
 
+  const currentUserId= req.currentUser.id;
+  const courseUserId= course[0].dataValues.userId;
   // first checks if the course belongs to the current user, then if the course exist and title/description is filled in.
-  if(req.currentUser.id === course[0].dataValues.id){
+  if(currentUserId === courseUserId){
+    
     if(course && req.body.title && req.body.description){
       await Course.update({
         title: req.body.title,
@@ -141,6 +144,7 @@ router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
       }
     }
   } else {
+    console.log('fired!')
     res.status(403).json({ message: 'Access Denied' });
   }
 }));
@@ -152,8 +156,11 @@ router.delete('/courses/:id', authenticateUser, asyncHandler(async (req, res) =>
     where: {id: req.params.id},
   });
 
+  const currentUserId= req.currentUser.id;
+  const courseUserId= course[0].dataValues.userId;
+
   // first checks if course belongs to the current user, only then deletes the course.
-  if(req.currentUser.id === course[0].dataValues.id){
+  if(currentUserId === courseUserId){
     if(course){
       Course.destroy({ where: {id: req.params.id} });
       res.status(204).end();
