@@ -89,7 +89,14 @@ router.get('/courses/:id', asyncHandler(async (req, res) => {
       attributes: ['id', 'firstName', 'lastName', 'emailAddress']
     }]
   });
-  res.status(200).json(course)
+  if (course.length !== 0){
+    res.status(200).json(course)
+  } else {
+    const error = new Error();
+    error.message = "course not found";
+    error.status = 404;
+    throw error;
+  }
 }));
 
 // POST Route Creates a course, sets the Location header to the URI for the course, and returns no content
@@ -120,10 +127,10 @@ router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
 
   const currentUserId= req.currentUser.id;
   const courseUserId= course[0].dataValues.userId;
+
   // first checks if the course belongs to the current user, then if the course exist and title/description is filled in.
   if(currentUserId === courseUserId){
-    
-    if(course && req.body.title && req.body.description){
+    try{
       await Course.update({
         title: req.body.title,
         description: req.body.description,
@@ -134,17 +141,11 @@ router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
         where: {id: req.params.id}
       })
       res.status(204).end();
-    } else {
-      let errors = new Error(); 
-      if(course){
-        errors.message = "Title nor Descriptioin can be empty"
-        res.status(400).json({ errors });
-      }else{
-        res.status(404).json({message: "Course Not Found"});
-      }
+    } catch (error){
+      const errors = error.errors.map(err => err.message);
+      res.status(400).json({ errors });   
     }
   } else {
-    console.log('fired!')
     res.status(403).json({ message: 'Access Denied' });
   }
 }));
